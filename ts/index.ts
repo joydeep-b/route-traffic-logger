@@ -4,14 +4,40 @@ import * as bodyParser from 'body-parser'
 import * as compression from 'compression'
 import * as fs from 'fs'
 import * as https from 'https'
+import * as csv from 'csv-writer'
+
+const logger = csv.createObjectCsvWriter({
+  path: 'log.csv',
+  header: [
+    {id: 'startTime', title: 'Start Time'},
+    {id: 'endTime', title: 'End Time'},
+    {id: 'summary', title: 'Summary'},
+    {id: 'distance', title: 'Distance'},
+    {id: 'duration', title: 'Duration'},
+    {id: 'json', title: 'JSON'}
+  ]
+});
 
 function log(res: any) {
   // console.log(res);
+  const timeNow = new Date().toLocaleString('en-GB', { timeZone: 'America/Chicago' });
   console.log(`
     Summary: ${res.routes[0].summary}
     Distance: ${res.routes[0].legs[0].distance.text}
     Duration: ${res.routes[0].legs[0].duration.text}`
-  ); 
+  );
+  logger.writeRecords([
+    {
+      startTime: timeNow,
+      endTime: 0,
+      summary: res.routes[0].summary,
+      distance: res.routes[0].legs[0].distance.text,
+      duration: res.routes[0].legs[0].duration.text,
+      json: JSON.stringify(res)
+    }
+  ]).then(() => {
+    console.log('Log saved.');
+  });
 }
 
 function main(args : string[]) : number {
@@ -40,6 +66,8 @@ function main(args : string[]) : number {
   return 0;
 }
 
-main(process.argv);
-// process.exit(main(process.argv));
+const retVal = main(process.argv);
+if (retVal !== 0) {
+  process.exit(retVal);
+}
 
